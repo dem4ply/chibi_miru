@@ -1,6 +1,7 @@
+import time
 import numpy
-from chibi.miru.cam import Chibi_cam
-from chibi.miru.image import Image
+from chibi_miru.cam import Chibi_cam
+from chibi_miru.image import Image
 from unittest import TestCase
 
 
@@ -29,6 +30,9 @@ class Test_chibi_cam_read_img( TestCase ):
         f = cam.read
         self.assertIsInstance( f, Image )
         self.assertIsInstance( f.raw, numpy.ndarray )
+        f.show()
+        f.wait( 2000 )
+        f.close()
 
     def test_raw_read_should_return_a_ndarray( self ):
         cam = Chibi_cam()

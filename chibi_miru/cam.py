@@ -1,6 +1,6 @@
 import cv2 as cv
 import logging
-from chibi.miru.image import Image
+from chibi_miru.image import Image
 
 logger = logging.getLogger( 'chibi.miru.cam' )
 
@@ -25,11 +25,10 @@ class Chibi_cam:
         is_read, image = self._cam.read()
         if not is_read:
             logger.error(
-                "no pudo optner la imagen de la camara {}".format(
-                    self.cam_number ) )
+                f"no pudo optner la imagen de la camara {self.cam_number}" )
         return  image
 
 
     def __del__( self ):
         self._cam.release()
-        logger.debug( "camara {} liberada".format( self.cam_number ) )
+        logger.debug( f"camara {self.cam_number} liberada" )

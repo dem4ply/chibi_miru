@@ -8,7 +8,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = []
+requirements = [ 'chibi>=0.4.4', 'opencv-python>=4.5.5', 'pyzbar>=0.1.8', ]
 
 setup(
     author="dem4ply",

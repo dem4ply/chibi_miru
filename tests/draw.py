@@ -1,10 +1,10 @@
 import time
 from unittest import TestCase
-from chibi.miru.draw import to_bgr
+from chibi_miru.draw import to_bgr
 
 import cv2 as cv
 
-from chibi.miru.image import Image
+from chibi_miru.image import Image
 
 
 class Test_draw( TestCase ):
