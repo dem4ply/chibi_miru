@@ -12,7 +12,7 @@ logger = logging.getLogger( 'chibi.miru.image' )
 
 
 class Image:
-    def __init__( self, ndarray, name=None, is_gray=False ):
+    def __init__( self, ndarray, name=None, is_gray=False, *, origin=None ):
         if isinstance( ndarray, str ):
             self.name = ndarray
             ndarray = cv.imread( ndarray, cv.IMREAD_COLOR )
@@ -22,6 +22,12 @@ class Image:
             ndarray = pil_to_cv( ndarray )
         else:
             self.name = name
+
+        if origin is not None:
+            self.origin = origin
+            self.name = f"{self.origin.name}__{self.name}"
+            self.is_gray = self.origin.is_gray
+
         self.is_gray = is_gray
         self.raw = ndarray
 
@@ -33,6 +39,32 @@ class Image:
         self._windows_name = name
         cv.imshow( name, img )
         cv.waitKey( 1 ) # se nesesita para ver la imagen
+
+    @functools.cached_property
+    def dimentions( self ):
+        h, w = self.raw.shape[ :2 ]
+        return w, h
+
+    @functools.cached_property
+    def ratio( self ):
+        w, h = self.dimentions
+        return w / h
+
+    def resize( self, width=None, height=None, interpolation=cv.INTER_AREA ):
+        dimensions = None
+        w, h = self.dimentions
+
+        if width is None and height is None:
+            return self
+        if width is None:
+            r = height / float( h )
+            dimensions = ( int( w * r ), height )
+        else:
+            r = width / float( w )
+            dimensions = ( width, int( h * r ) )
+
+        result = cv.resize( self.raw, dimensions, interpolation=interpolation )
+        return Processed( result, origin=self, is_gray=self.is_gray )
 
     @functools.cached_property
     def barcode( self ):
@@ -55,7 +87,8 @@ class Image:
         if self.is_gray:
             return self
         gray = cv.cvtColor( self.raw, cv.COLOR_BGR2GRAY )
-        return type( self )( gray, name=f"{self.name}__gray", is_gray=True )
+        return type( self )(
+            gray, name=f"{self.name}__gray", is_gray=True, origin=self )
 
     def close( self ):
         if hasattr( self, '_windows_name' ):
@@ -73,10 +106,7 @@ class Image:
 
 class Processed( Image ):
     def __init__( self, *args, origin, **kw ):
-        super().__init__( *args, **kw )
-        self.origin = origin
-        self.is_gray = self.origin.is_gray
-        self.name = f"{self.origin.name}__{self.name}"
+        super().__init__( *args, origin=origin, **kw )
 
 
 class Threshold( Processed ):
@@ -105,7 +135,29 @@ class Processing():
         return Threshold(
             thresh, origin=self.parent, threshold_value=threshold_value )
 
-    def gaussian_blur( self, x=5, y=5, kernel=1 ):
+    def dilate( self, threshold_value, kernel, iterations=1 ):
+        """
+        Examples
+        --------
+        >>>kernel = np.ones((5, 5), np.uint8)
+        """
+        dilated_value = cv.dilate( threshold_value, kernel, iterations=1 )
+        return Dilate( dilated_value, origin=self.parent,  )
+
+    def gaussian_blur( self, x=5, y=5, kernel=0 ):
+        """
+        aplica desenfoque gausiano
+
+        Parameters
+        ----------
+        x: int
+        y: int
+        kernel: int
+
+        Examples
+        ========
+        >>>gaussian_blur
+        """
         blur = cv.GaussianBlur( self.parent.gray.raw, ( x, y ), kernel )
         return Processed(
             blur, origin=self.parent.gray, name="gaussian_blur" )

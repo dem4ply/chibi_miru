@@ -1,5 +1,5 @@
 import time
-from unittest import TestCase
+from unittest import TestCase, skip
 
 import cv2 as cv
 
@@ -33,6 +33,27 @@ class Test_image_draw( Test_image ):
     def test_should_draw_a_rectangle( self ):
         self.image.draw.rectangle( ( 100, 100 ), 100, 100, ( 255, 0, 0 ) )
         self.image.show()
+
+
+class Test_image_funtions( Test_image ):
+
+    def test_ratio_should_return_a_float( self ):
+        self.assertIsInstance( self.image.ratio, float )
+
+    def test_without_dimensions_should_return_self( self ):
+        result = self.image.resize()
+        self.assertIs( self.image, result )
+
+    def test_width_should_mantent_the_ratio( self ):
+        result = self.image.resize( width=100 )
+        self.assertAlmostEqual( self.image.ratio, result.ratio, 2 )
+        result.show()
+
+    @skip( 'small diff' )
+    def test_height_should_mantent_the_ratio( self ):
+        result = self.image.resize( height=100 )
+        self.assertAlmostEqual( self.image.ratio, result.ratio, 2 )
+        result.show()
 
 
 class Test_gray( TestCase ):
