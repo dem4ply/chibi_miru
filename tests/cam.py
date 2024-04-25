@@ -1,4 +1,3 @@
-import time
 import numpy
 from chibi_miru.cam import Chibi_cam
 from chibi_miru.image import Image

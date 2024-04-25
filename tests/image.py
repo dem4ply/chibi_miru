@@ -1,11 +1,12 @@
-import time
-from unittest import TestCase, skip
-
 import cv2 as cv
-
-from chibi_miru.image import Image, Threshold, Processing, Contours
-from chibi_miru.barcode import types
 import PIL.Image
+from io import BytesIO
+
+from unittest import TestCase, skip
+from chibi_miru.image import Image, Threshold, Contours
+from chibi_miru.barcode import types
+
+from chibi.file.temp import Chibi_temp_path
 
 
 class Test_image( TestCase ):
@@ -20,6 +21,19 @@ class Test_image( TestCase ):
         #time.sleep( self.wait_time / 1000 )
         cv.waitKey( self.wait_time )
         cv.destroyAllWindows()
+
+
+class Test_image_save( Test_image ):
+    def test_image_can_be_saved( self ):
+        tmp_path = Chibi_temp_path()
+        self.image.save( tmp_path )
+        path = tmp_path + self.image.name
+        self.assertTrue( path.exists )
+
+    def test_can_be_saved_to_bytes_io( self ):
+        buff = BytesIO()
+        self.image.save( buff )
+        self.assertTrue( buff.read() )
 
 
 class Test_image_draw( Test_image ):

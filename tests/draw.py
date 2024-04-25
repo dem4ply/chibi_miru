@@ -1,8 +1,5 @@
-import time
 from unittest import TestCase
 from chibi_miru.draw import to_bgr
-
-import cv2 as cv
 
 from chibi_miru.image import Image
 

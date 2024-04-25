@@ -1,12 +1,16 @@
-import cv2 as cv
-import logging
-import numpy as np
 import functools
-from chibi_miru.draw import Draw
-from chibi.madness.string import generate_b64_unsecure
-from chibi_miru.barcode import Barcode
+import io
+import logging
+
+import cv2 as cv
 from PIL.Image import Image as PIL_image
+from chibi.file import Chibi_path
+from chibi.madness.string import generate_b64_unsecure
+
 from .snippets import pil_to_cv
+from chibi_miru.barcode import Barcode
+from chibi_miru.draw import Draw
+
 
 logger = logging.getLogger( 'chibi.miru.image' )
 
@@ -39,6 +43,21 @@ class Image:
         self._windows_name = name
         cv.imshow( name, img )
         cv.waitKey( 1 ) # se nesesita para ver la imagen
+
+    def save( self, path ):
+        if isinstance( path, io.BytesIO ):
+            file_name = Chibi_path( self.name )
+            success, buff = cv.imencode( f".{file_name.extension}", self.raw )
+            path.write( buff )
+            path.seek( 0 )
+        elif isinstance( path, str ):
+            cv.imwrite( path + self.name, self.raw )
+        else:
+            raise NotImplementedError(
+                'no imprementado este metodo de guardado {str(type(path))} '
+                '{str(path)}'
+            )
+
 
     @functools.cached_property
     def dimentions( self ):
@@ -98,7 +117,7 @@ class Image:
 
     def close_all( self ):
         cv.destroyAllWindows()
-        logger.debug( f"cerrando todas las ventanas" )
+        logger.debug( "cerrando todas las ventanas" )
 
     def wait( self, t ):
         cv.waitKey( t )
