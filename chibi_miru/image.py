@@ -17,9 +17,12 @@ logger = logging.getLogger( 'chibi.miru.image' )
 
 class Image:
     def __init__( self, ndarray, name=None, is_gray=False, *, origin=None ):
+        # is a path
         if isinstance( ndarray, str ):
-            self.name = ndarray
-            ndarray = cv.imread( ndarray, cv.IMREAD_COLOR )
+            path = Chibi_path( ndarray )
+            self._path = path
+            self.name = self.path.base_name
+            ndarray = cv.imread( path, cv.IMREAD_COLOR )
         elif isinstance( ndarray, PIL_image ):
             if name is None:
                 self.name = ndarray.filename or generate_b64_unsecure()
@@ -29,7 +32,12 @@ class Image:
 
         if origin is not None:
             self.origin = origin
-            self.name = f"{self.origin.name}__{self.name}"
+            origin_name = Chibi_path( self.origin.name )
+            self.name = (
+                f"{origin_name.file_name}__{self.name}"
+                f"{origin_name.extension}"
+            )
+            #self.name = f"{self.origin.name}__{self.name}"
             self.is_gray = self.origin.is_gray
 
         self.is_gray = is_gray
@@ -58,6 +66,9 @@ class Image:
                 '{str(path)}'
             )
 
+    @property
+    def path( self ):
+        return self._path
 
     @functools.cached_property
     def dimentions( self ):
@@ -107,7 +118,7 @@ class Image:
             return self
         gray = cv.cvtColor( self.raw, cv.COLOR_BGR2GRAY )
         return type( self )(
-            gray, name=f"{self.name}__gray", is_gray=True, origin=self )
+            gray, name="gray", is_gray=True, origin=self )
 
     def close( self ):
         if hasattr( self, '_windows_name' ):

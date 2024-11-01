@@ -84,6 +84,14 @@ class Test_gray( TestCase ):
         gray = self.image.gray
         self.assertTrue( gray.is_gray )
 
+    def test_gray_name_should_be_beforre_extention( self ):
+        gray = self.image.gray
+        expected = '1535359854403__gray.png'
+        self.assertTrue(
+            gray.name.endswith( expected ),
+            f"the name is not the expected '{expected}' "
+            f"was '{gray.name}'" )
+
     def test_gray_show( self ):
         gray = self.image.gray
         gray.show()

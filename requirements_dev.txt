@@ -9,3 +9,4 @@ pycodestyle
 jedi
 pipdeptree
 rope
+ropevim

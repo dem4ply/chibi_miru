@@ -26,8 +26,7 @@ class Chibi_cam:
         if not is_read:
             logger.error(
                 f"no pudo optner la imagen de la camara {self.cam_number}" )
-        return  image
-
+        return image
 
     def __del__( self ):
         self._cam.release()

@@ -1,9 +1,15 @@
 import numpy
 from chibi_miru.cam import Chibi_cam
 from chibi_miru.image import Image
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 
+def has_camera( cam_number=0 ):
+    cam = Chibi_cam()
+    return cam.is_open
+
+
+@skipIf( not has_camera(), "no se encontro la camara 0" )
 class Test_chibi_cam( TestCase ):
     def setUp( self ):
         pass
@@ -20,6 +26,7 @@ class Test_chibi_cam( TestCase ):
         self.assertFalse( _cam.isOpened() )
 
 
+@skipIf( not has_camera(), "no se encontro la camara 0" )
 class Test_chibi_cam_read_img( TestCase ):
     def setUp( self ):
         pass
