@@ -96,6 +96,12 @@ class Image:
         result = cv.resize( self.raw, dimensions, interpolation=interpolation )
         return Processed( result, origin=self, is_gray=self.is_gray )
 
+    def crop( self, x, y, width, height ):
+        crop_raw = self.raw[ y : y + height, x : x + width ]
+        return Image(
+            crop_raw, name=f'crop_{x}_{y}_{width}_{height}', origin=self,
+            is_gray=self.is_gray )
+
     @functools.cached_property
     def barcode( self ):
         return Barcode( self.gray.raw )
@@ -145,6 +151,12 @@ class Threshold( Processed ):
         self.threshold_value = threshold_value
 
 
+class Dilate( Processed ):
+    def __init__( self, *args, kernel, **kw ):
+        super().__init__( *args, **kw )
+        self.kernel = kernel
+
+
 class Contours( Processed ):
     def __init__( self, *args, contours, hierarchy, **kw ):
         super().__init__( *args, **kw )
@@ -153,6 +165,16 @@ class Contours( Processed ):
         cv.drawContours(
             self.raw, contours,
             -1, ( 0, 255, 0 ), 2, cv.LINE_AA )
+
+    @functools.cached_property
+    def rectancles( self ):
+        for contour in self.contours:
+            yield cv.boundingRect( contour )
+
+    def crops( self ):
+        for rectangle in self.rectancles:
+            x, y, width, height = rectangle
+            yield self.crop( x, y, width, height )
 
 
 class Processing():
@@ -165,14 +187,14 @@ class Processing():
         return Threshold(
             thresh, origin=self.parent, threshold_value=threshold_value )
 
-    def dilate( self, threshold_value, kernel, iterations=1 ):
+    def dilate( self, kernel, iterations=1 ):
         """
         Examples
         --------
         >>>kernel = np.ones((5, 5), np.uint8)
         """
-        dilated_value = cv.dilate( threshold_value, kernel, iterations=1 )
-        return Dilate( dilated_value, origin=self.parent,  )
+        dilated_value = cv.dilate( self.parent.raw, kernel, iterations=1 )
+        return Dilate( dilated_value, origin=self.parent, kernel=kernel,  )
 
     def gaussian_blur( self, x=5, y=5, kernel=0 ):
         """
@@ -208,6 +230,18 @@ class Detect:
         contours, hierarchy = cv.findContours(
             image=thresh.raw, mode=cv.RETR_TREE,
             method=cv.CHAIN_APPROX_NONE )
+        return Contours(
+            self.parent.raw.copy(), origin=self.parent,
+            contours=contours, hierarchy=hierarchy )
+
+    def _ocr_contours( self ):
+        thresh = self.parent.processing.otsu()
+        rect_kernel = cv.getStructuringElement(cv.MORPH_RECT, (18, 18))
+        dilation = thresh.processing.dilate( rect_kernel )
+        contours, hierarchy = cv.findContours(
+            image=dilation.raw, mode=cv.RETR_EXTERNAL,
+            method=cv.CHAIN_APPROX_NONE )
+
         return Contours(
             self.parent.raw.copy(), origin=self.parent,
             contours=contours, hierarchy=hierarchy )

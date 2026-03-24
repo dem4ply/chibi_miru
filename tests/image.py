@@ -1,6 +1,7 @@
 import cv2 as cv
 import PIL.Image
 from io import BytesIO
+import pytesseract
 
 from unittest import TestCase, skip
 from chibi_miru.image import Image, Threshold, Contours
@@ -148,6 +149,11 @@ class Test_detect( TestCase ):
         result.wait( self.wait_time )
         result.close()
 
+    def test_contours_rectangles_should_work( self ):
+        result = self.image.detect.contours()
+        for rect in result.rectancles:
+            self.assertEqual( len( rect ), 4 )
+
 
 class Test_image_qr( Test_image ):
     def setUp( self ):
@@ -178,3 +184,17 @@ class Test_init_other_class( Test_image ):
         image = Image( pil_img )
         e = image.raw == self.image.raw
         self.assertTrue( e.all() )
+
+
+class Test_crop( Test_image ):
+    def test_crop_should_work( self ):
+        x = 10
+        y = 10
+        w = 100
+        h = 200
+        result = self.image.crop( x, y, w, h )
+        expected = ( w, h )
+        self.assertEqual( result.dimentions, expected )
+        result.show()
+        result.wait( self.wait_time )
+        result.close()
