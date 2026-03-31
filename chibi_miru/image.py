@@ -266,3 +266,17 @@ class Detect:
         return Contours(
             self.parent.raw.copy(), origin=self.parent,
             contours=contours, hierarchy=hierarchy )
+
+    @functools.cached_property
+    def ocr( self ):
+        return OCR( self, parent=self.parent )
+
+
+class OCR:
+    def __init__( self, *args, parent, **kw ):
+        self.parent = parent
+
+    def to_string( self ):
+        import pytesseract
+        result = pytesseract.image_to_string( self.parent.raw, )
+        return result
