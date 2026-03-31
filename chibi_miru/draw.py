@@ -1,6 +1,7 @@
 import cv2 as cv
 from chibi_miru.barcode import types
 
+
 def to_bgr( color ):
     return color[::-1]
 

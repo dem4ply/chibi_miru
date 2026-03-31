@@ -1,13 +1,12 @@
 import cv2 as cv
 import PIL.Image
-from io import BytesIO
-import pytesseract
 
+from io import BytesIO
 from unittest import TestCase, skip
+from chibi.file.temp import Chibi_temp_path
+
 from chibi_miru.image import Image, Threshold, Contours
 from chibi_miru.barcode import types
-
-from chibi.file.temp import Chibi_temp_path
 
 
 class Test_image( TestCase ):
@@ -19,7 +18,7 @@ class Test_image( TestCase ):
 
     def tearDown( self ):
         super().tearDown()
-        #time.sleep( self.wait_time / 1000 )
+        # time.sleep( self.wait_time / 1000 )
         cv.waitKey( self.wait_time )
         cv.destroyAllWindows()
 
@@ -69,6 +68,10 @@ class Test_image_funtions( Test_image ):
         result = self.image.resize( height=100 )
         self.assertAlmostEqual( self.image.ratio, result.ratio, 2 )
         result.show()
+
+    def test_resize_should_be_in_the_name( self ):
+        result = self.image.resize( width=100 )
+        self.assertIn( "resize_100x", result.name )
 
 
 class Test_gray( TestCase ):

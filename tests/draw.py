@@ -1,8 +1,6 @@
 from unittest import TestCase
 from chibi_miru.draw import to_bgr
 
-from chibi_miru.image import Image
-
 
 class Test_draw( TestCase ):
     def test_transform_rgb_to_bgr_tuple( self ):

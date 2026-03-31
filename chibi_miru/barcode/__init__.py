@@ -2,7 +2,6 @@ from pyzbar import pyzbar
 from .types import QR
 
 
-
 class Barcode:
     def __init__( self, image ):
         self.image = image

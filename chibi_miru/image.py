@@ -37,7 +37,6 @@ class Image:
                 f"{origin_name.file_name}__{self.name}"
                 f"{origin_name.extension}"
             )
-            #self.name = f"{self.origin.name}__{self.name}"
             self.is_gray = self.origin.is_gray
 
         self.is_gray = is_gray
@@ -50,7 +49,7 @@ class Image:
             name = self.name
         self._windows_name = name
         cv.imshow( name, img )
-        cv.waitKey( 1 ) # se nesesita para ver la imagen
+        cv.waitKey( 1 )  # se nesesita para ver la imagen
 
     def save( self, path ):
         if isinstance( path, io.BytesIO ):
@@ -94,10 +93,12 @@ class Image:
             dimensions = ( width, int( h * r ) )
 
         result = cv.resize( self.raw, dimensions, interpolation=interpolation )
-        return Processed( result, origin=self, is_gray=self.is_gray )
+        return Resize(
+            result, origin=self, dimensions=dimensions,
+            is_gray=self.is_gray )
 
     def crop( self, x, y, width, height ):
-        crop_raw = self.raw[ y : y + height, x : x + width ]
+        crop_raw = self.raw[ y:y + height, x:x + width ]
         return Image(
             crop_raw, name=f'crop_{x}_{y}_{width}_{height}', origin=self,
             is_gray=self.is_gray )
@@ -129,7 +130,7 @@ class Image:
     def close( self ):
         if hasattr( self, '_windows_name' ):
             cv.destroyWindow( self._windows_name )
-            cv.waitKey( 1 ) # se nesesita, no se porque
+            cv.waitKey( 1 )  # se nesesita, no se porque
             logger.debug( f"cerro la ventana {self._windows_name}" )
 
     def close_all( self ):
@@ -145,10 +146,29 @@ class Processed( Image ):
         super().__init__( *args, origin=origin, **kw )
 
 
+class Resize( Processed ):
+    def __init__( self, *args, dimensions=None, **kw ):
+        if dimensions is not None:
+            name = f"resize_{dimensions[0]}x{dimensions[1]}"
+            super().__init__( *args, name=name, **kw )
+        else:
+            name = None
+            super().__init__( *args, **kw )
+        self.dimentions = dimensions
+
+
 class Threshold( Processed ):
     def __init__( self, *args, threshold_value, **kw ):
         super().__init__( *args, **kw )
         self.threshold_value = threshold_value
+
+
+class Binary( Threshold ):
+    def __init__( self, *args, a, b, **kw ):
+        name = f"binary_{a}_{b}"
+        super().__init__( *args, name=name, **kw )
+        self.a = a
+        self.b = b
 
 
 class Dilate( Processed ):
@@ -184,8 +204,9 @@ class Processing():
     def binary( self, a=150, b=255 ):
         threshold_value, thresh = cv.threshold(
             self.parent.gray.raw, a, b, cv.THRESH_BINARY )
-        return Threshold(
-            thresh, origin=self.parent, threshold_value=threshold_value )
+        return Binary(
+            thresh, origin=self.parent, threshold_value=threshold_value,
+            a=a, b=b )
 
     def dilate( self, kernel, iterations=1 ):
         """
@@ -194,7 +215,7 @@ class Processing():
         >>>kernel = np.ones((5, 5), np.uint8)
         """
         dilated_value = cv.dilate( self.parent.raw, kernel, iterations=1 )
-        return Dilate( dilated_value, origin=self.parent, kernel=kernel,  )
+        return Dilate( dilated_value, origin=self.parent, kernel=kernel, )
 
     def gaussian_blur( self, x=5, y=5, kernel=0 ):
         """
@@ -236,7 +257,7 @@ class Detect:
 
     def _ocr_contours( self ):
         thresh = self.parent.processing.otsu()
-        rect_kernel = cv.getStructuringElement(cv.MORPH_RECT, (18, 18))
+        rect_kernel = cv.getStructuringElement( cv.MORPH_RECT, ( 18, 18 ) )
         dilation = thresh.processing.dilate( rect_kernel )
         contours, hierarchy = cv.findContours(
             image=dilation.raw, mode=cv.RETR_EXTERNAL,
