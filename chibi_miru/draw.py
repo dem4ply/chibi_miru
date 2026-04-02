@@ -25,3 +25,24 @@ class Draw:
                 barcode.rectagle[2], color, size  )
         else:
             raise NotImplementedError
+
+    def text( self, text, position ):
+        """
+        pone texto en la imagen
+
+        Arguments
+        ---------
+        text: string
+        position: Vector2 or tuple of 2 ints
+        """
+        font = cv.FONT_HERSHEY_SIMPLEX
+        ( width, height ), baseline = cv.getTextSize(
+            text, font, 1, 1 )
+        x, y = position
+        if y - height < 0:
+            y = y + height
+        position = ( x, y )
+        cv.putText(
+            self.image, text,
+            position, font, 1, ( 0, 255, 0 ), 1,
+            cv.LINE_AA )

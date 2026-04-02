@@ -138,7 +138,7 @@ class Image:
         logger.debug( "cerrando todas las ventanas" )
 
     def wait( self, t ):
-        cv.waitKey( t )
+        return cv.waitKey( t )
 
 
 class Processed( Image ):
