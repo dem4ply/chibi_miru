@@ -10,6 +10,7 @@ from chibi.madness.string import generate_b64_unsecure
 from .snippets import pil_to_cv
 from chibi_miru.barcode import Barcode
 from chibi_miru.draw import Draw
+from chibi_miru.detect import Detect
 
 
 logger = logging.getLogger( 'chibi.miru.image' )
@@ -80,6 +81,7 @@ class Image:
         return w / h
 
     def resize( self, width=None, height=None, interpolation=cv.INTER_AREA ):
+        from chibi_miru.processed import Resize
         dimensions = None
         w, h = self.dimentions
 
@@ -141,62 +143,6 @@ class Image:
         return cv.waitKey( t )
 
 
-class Processed( Image ):
-    def __init__( self, *args, origin, **kw ):
-        super().__init__( *args, origin=origin, **kw )
-
-
-class Resize( Processed ):
-    def __init__( self, *args, dimensions=None, **kw ):
-        if dimensions is not None:
-            name = f"resize_{dimensions[0]}x{dimensions[1]}"
-            super().__init__( *args, name=name, **kw )
-        else:
-            name = None
-            super().__init__( *args, **kw )
-        self.dimentions = dimensions
-
-
-class Threshold( Processed ):
-    def __init__( self, *args, threshold_value, **kw ):
-        super().__init__( *args, **kw )
-        self.threshold_value = threshold_value
-
-
-class Binary( Threshold ):
-    def __init__( self, *args, a, b, **kw ):
-        name = f"binary_{a}_{b}"
-        super().__init__( *args, name=name, **kw )
-        self.a = a
-        self.b = b
-
-
-class Dilate( Processed ):
-    def __init__( self, *args, kernel, **kw ):
-        super().__init__( *args, **kw )
-        self.kernel = kernel
-
-
-class Contours( Processed ):
-    def __init__( self, *args, contours, hierarchy, **kw ):
-        super().__init__( *args, **kw )
-        self.contours = contours
-        self.hierarchy = hierarchy
-        cv.drawContours(
-            self.raw, contours,
-            -1, ( 0, 255, 0 ), 2, cv.LINE_AA )
-
-    @functools.cached_property
-    def rectancles( self ):
-        for contour in self.contours:
-            yield cv.boundingRect( contour )
-
-    def crops( self ):
-        for rectangle in self.rectancles:
-            x, y, width, height = rectangle
-            yield self.crop( x, y, width, height )
-
-
 class Processing():
     def __init__( self, *args, parent, **kw ):
         self.parent = parent
@@ -204,6 +150,7 @@ class Processing():
     def binary( self, a=150, b=255 ):
         threshold_value, thresh = cv.threshold(
             self.parent.gray.raw, a, b, cv.THRESH_BINARY )
+        from chibi_miru.processed import Binary
         return Binary(
             thresh, origin=self.parent, threshold_value=threshold_value,
             a=a, b=b )
@@ -214,6 +161,7 @@ class Processing():
         --------
         >>>kernel = np.ones((5, 5), np.uint8)
         """
+        from chibi_miru.processed import Dilate
         dilated_value = cv.dilate( self.parent.raw, kernel, iterations=1 )
         return Dilate( dilated_value, origin=self.parent, kernel=kernel, )
 
@@ -232,51 +180,13 @@ class Processing():
         >>>gaussian_blur
         """
         blur = cv.GaussianBlur( self.parent.gray.raw, ( x, y ), kernel )
+        from chibi_miru.processed import Processed
         return Processed(
             blur, origin=self.parent.gray, name="gaussian_blur" )
 
     def otsu( self, a=0, b=255 ):
         threshold_value, thresh = cv.threshold(
             self.parent.gray.raw, a, b, cv.THRESH_OTSU )
+        from chibi_miru.processed import Threshold
         return Threshold(
             thresh, origin=self.parent, threshold_value=threshold_value )
-
-
-class Detect:
-    def __init__( self, *args, parent, **kw ):
-        self.parent = parent
-
-    def contours( self ):
-        thresh = self.parent.processing.otsu()
-        contours, hierarchy = cv.findContours(
-            image=thresh.raw, mode=cv.RETR_TREE,
-            method=cv.CHAIN_APPROX_NONE )
-        return Contours(
-            self.parent.raw.copy(), origin=self.parent,
-            contours=contours, hierarchy=hierarchy )
-
-    def _ocr_contours( self ):
-        thresh = self.parent.processing.otsu()
-        rect_kernel = cv.getStructuringElement( cv.MORPH_RECT, ( 18, 18 ) )
-        dilation = thresh.processing.dilate( rect_kernel )
-        contours, hierarchy = cv.findContours(
-            image=dilation.raw, mode=cv.RETR_EXTERNAL,
-            method=cv.CHAIN_APPROX_NONE )
-
-        return Contours(
-            self.parent.raw.copy(), origin=self.parent,
-            contours=contours, hierarchy=hierarchy )
-
-    @functools.cached_property
-    def ocr( self ):
-        return OCR( self, parent=self.parent )
-
-
-class OCR:
-    def __init__( self, *args, parent, **kw ):
-        self.parent = parent
-
-    def to_string( self ):
-        import pytesseract
-        result = pytesseract.image_to_string( self.parent.raw, )
-        return result

@@ -5,7 +5,8 @@ from io import BytesIO
 from unittest import TestCase, skip
 from chibi.file.temp import Chibi_temp_path
 
-from chibi_miru.image import Image, Threshold, Contours
+from chibi_miru.image import Image
+from chibi_miru.processed import Threshold, Contours
 from chibi_miru.barcode import types
 
 
